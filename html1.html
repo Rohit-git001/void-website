@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fate Decider - The Void</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: black;
+      color: white;
+      font-family: 'Courier New', Courier, monospace;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .hidden { opacity: 0; }
+    .fade-in { animation: fadeIn 2s forwards; }
+    .fade-out { animation: fadeOut 2s forwards; }
+    .typing-space { text-align: center; }
+    .btn-container {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+    }
+    button {
+      background: none;
+      border: 1px solid white;
+      color: white;
+      padding: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.3s, color 0.3s;
+    }
+    button:hover {
+      background: white;
+      color: black;
+    }
+    #main { text-align: center; line-height: 1.6; }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div id="main" class="hidden"></div>
+  <div class="btn-container">
+    <button onclick="location.href='index.html'">Return to the Void</button>
+  </div>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
+  <script>
+    const main = document.getElementById('main');
+    const btnContainer = document.querySelector('.btn-container');
+    
+    // Fate decider intro text
+    const introText = [
+      "You have summoned the Fate Decider,",
+      "A force from the void, where destiny is written.",
+      "Ask your question, and the void shall respond,",
+      "But beware, its answers are cryptic, mysterious, and unyielding."
+    ];
+
+    let currentTextIndex = 0;
+
+    // Typing animation with pauses between sentences
+    function typeText(textArray, callback) {
+      if (currentTextIndex < textArray.length) {
+        const phrase = textArray[currentTextIndex];
+        let charIndex = 0;
+        const interval = setInterval(() => {
+          if (charIndex < phrase.length) {
+            main.innerHTML += phrase[charIndex];
+            charIndex++;
+          } else {
+            clearInterval(interval);
+            currentTextIndex++;
+            main.innerHTML += "<br>";
+            setTimeout(() => typeText(textArray, callback), 1000); // Pause between sentences
+          }
+        }, 50);
+      } else {
+        if (callback) callback();
+      }
+    }
+
+    // Fading functions
+    function fadeIn(element) {
+      element.classList.remove('hidden');
+      element.classList.add('fade-in');
+    }
+    
+    function fadeOut(element, callback) {
+      element.classList.add('fade-out');
+      element.addEventListener('animationend', () => {
+        element.classList.add('hidden');
+        element.classList.remove('fade-out');
+        if (callback) callback();
+      });
+    }
+
+    // Main sequence for fate decider intro
+    function startSequence() {
+      fadeIn(main);
+      typeText(introText, () => {
+        fadeOut(main, () => {
+          main.innerHTML = `
+            <div class="typing-space">
+              <input type="text" id="userQuestion" placeholder="Ask your question..." />
+              <button onclick="generateAnswer()">Ask the Void</button>
+              <br>
+            </div>`;
+          fadeIn(main);
+        });
+      });
+    }
+
+    // Generate void response
+    function generateAnswer() {
+      const userQuestion = document.getElementById('userQuestion').value.trim();
+      if (userQuestion === "") return;  // Prevent empty questions
+
+      let answer = getVoidAnswer(userQuestion);
+      
+      fadeOut(main, () => {
+        main.innerHTML = `<div class="typing-space"><strong>Answer from the Void:</strong><br>${answer}</div>`;
+        fadeIn(main);
+        setTimeout(() => {
+          // After the answer fades in, reset the question area
+          resetQuestionArea();
+        }, 10000); // Wait for 10 seconds before resetting
+      });
+    }
+
+    // Void answers: Creative responses based on the question
+    function getVoidAnswer(question) {
+      const answers = [
+        "Yes, the stars align in your favor. Keep going, you are on the right path.",
+        "No, but that only means a better opportunity awaits. Trust the timing of the universe.",
+        "Maybe, but only you can decide how to move forward. Courage is key.",
+        "Yes, the void whispers that success is near. Embrace the journey ahead.",
+        "No, but the path is not closed. New doors will open soon.",
+        "Yes, the time is right. Seize the moment with confidence.",
+        "Maybe, the future is full of possibilities. Your strength will guide you.",
+        "Yes, your destiny is calling. Step forward with courage and purpose.",
+        "No, but this setback is simply an opportunity to grow. Keep moving forward.",
+        "Maybe, but only if you have the courage to take the first step.",
+        "Yes, the void sees your potential. You are capable of achieving greatness.",
+        "No, but every no brings you closer to a better yes.",
+        "Maybe, it’s time to explore other possibilities. The journey is yours to shape.",
+        "Yes, the answer is clear. The universe is ready to support you.",
+        "No, but this no is merely a lesson in patience. Keep your faith strong.",
+        "Yes, the universe is on your side. Keep pushing forward.",
+        "Maybe, the path ahead is not yet clear, but trust yourself and you will find it.",
+        "Yes, the void sees a bright future ahead. Continue on your path with confidence.",
+        "No, but the void knows you have the strength to overcome any challenge.",
+        "Maybe, the answer lies just beyond the horizon. Keep your heart open.",
+        "Yes, the answer is yes, but only if you believe in your own power.",
+        "No, but the void sees no end to your journey. New beginnings are ahead.",
+        "Maybe, but the choice is yours. Trust in your heart and the universe will follow.",
+        "Yes, you have the strength to make it happen. Now take the leap.",
+        "No, but this challenge will shape you into something even stronger.",
+        "Maybe, the universe is preparing something greater for you. Keep faith."
+      ];
+      return answers[Math.floor(Math.random() * answers.length)];
+    }
+
+    // Reset the typing space for new question
+    function resetQuestionArea() {
+      main.innerHTML = `
+        <div class="typing-space">
+          <input type="text" id="userQuestion" placeholder="Ask your question..." />
+          <button onclick="generateAnswer()">Ask the Void</button>
+          <br>
+        </div>`;
+      fadeIn(main);
+    }
+
+    // Start the page sequence
+    startSequence();
+  </script>
+</body>
+</html>

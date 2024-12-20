@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connect with the Void</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: black;
+      color: white;
+      font-family: 'Courier New', Courier, monospace;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    .hidden { opacity: 0; display: none; }
+    .fade-in { animation: fadeIn 2s forwards; }
+    .fade-out { animation: fadeOut 2s forwards; }
+    #intro {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+    #canvasContainer {
+      position: relative;
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+    }
+    #menu {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    button, input[type="color"], input[type="url"] {
+      background: none;
+      border: 1px solid white;
+      color: white;
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s, color 0.3s;
+    }
+    button:hover, input[type="color"]:hover, input[type="url"]:hover {
+      background: white;
+      color: black;
+    }
+    input[type="color"], input[type="url"] {
+      width: auto;
+      padding: 5px;
+    }
+    input[type="url"] {
+      color: black;
+      background: white;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+    #videoPlayer {
+      position: fixed;
+      bottom: 0;
+      right: 0;
+      width: 320px;
+      height: 180px;
+      border: none;
+      z-index: 10;
+      display: none;
+    }
+    .eraserCursor {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.5);
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      visibility: hidden;
+    }
+  </style>
+</head>
+<body>
+  <div id="intro" class="hidden"></div>
+  <div id="canvasContainer" class="hidden">
+    <canvas id="voidCanvas"></canvas>
+    <div id="menu">
+      <input type="color" id="colorPicker" title="Pick Brush Color">
+      <button id="toggleEraser">Toggle Eraser</button>
+      <input type="url" id="youtubeLink" placeholder="Paste YouTube Link">
+      <button onclick="playYouTube()">Play Audio</button>
+      <button id="addTextTool">Add Text</button>
+      <button onclick="clearCanvas()">Clear</button>
+      <button onclick="saveCanvas()">Save Screenshot</button>
+      <button onclick="location.href='index.html'">Return to the Void</button>
+    </div>
+    <iframe id="videoPlayer" class="hidden" allow="autoplay"></iframe>
+  </div>
+  <div class="eraserCursor" id="eraserCursor"></div>
+
+  <script>
+    const intro = document.getElementById('intro');
+    const canvasContainer = document.getElementById('canvasContainer');
+    const canvas = document.getElementById('voidCanvas');
+    const ctx = canvas.getContext('2d');
+    const colorPicker = document.getElementById('colorPicker');
+    const toggleEraser = document.getElementById('toggleEraser');
+    const youtubeLink = document.getElementById('youtubeLink');
+    const videoPlayer = document.getElementById('videoPlayer');
+    const addTextTool = document.getElementById('addTextTool');
+    const eraserCursor = document.getElementById('eraserCursor');
+
+    let isDrawing = false;
+    let isErasing = false;
+    let eraserSize = 20;
+    let isTextToolActive = false;
+    let lastX = 0;
+    let lastY = 0;
+    let textBoxes = [];
+
+    const introText = [
+      "The void invites you to draw, express, and create.",
+      "Feel free to use the tools at your disposal. Enter the void."
+    ];
+
+    let currentTextIndex = 0;
+
+    function typeText(textArray, callback) {
+      if (currentTextIndex < textArray.length) {
+        const phrase = textArray[currentTextIndex];
+        let charIndex = 0;
+        const interval = setInterval(() => {
+          if (charIndex < phrase.length) {
+            intro.innerHTML += phrase[charIndex];
+            charIndex++;
+          } else {
+            clearInterval(interval);
+            currentTextIndex++;
+            intro.innerHTML += "<br>";
+            setTimeout(() => typeText(textArray, callback), 1000);
+          }
+        }, 50);
+      } else {
+        if (callback) callback();
+      }
+    }
+
+    function fadeIn(element) {
+      element.classList.remove('hidden');
+      element.classList.add('fade-in');
+    }
+
+    function fadeOut(element, callback) {
+      element.classList.add('fade-out');
+      element.addEventListener('animationend', () => {
+        element.classList.add('hidden');
+        element.classList.remove('fade-out');
+        if (callback) callback();
+      });
+    }
+
+    function startSequence() {
+      fadeIn(intro);
+      typeText(introText, () => {
+        fadeOut(intro, () => {
+          intro.remove();
+          fadeIn(canvasContainer);
+          resizeCanvas();
+        });
+      });
+    }
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    function drawVoid(event) {
+      if (!isDrawing || isTextToolActive) return;
+
+      ctx.beginPath();
+      if (isErasing) {
+        ctx.clearRect(event.offsetX - eraserSize / 2, event.offsetY - eraserSize / 2, eraserSize, eraserSize);
+        textBoxes.forEach(textbox => {
+          if (isCollision(event.offsetX, event.offsetY, textbox)) {
+            textbox.remove();
+          }
+        });
+      } else {
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(event.offsetX, event.offsetY);
+        ctx.strokeStyle = colorPicker.value;
+        ctx.lineWidth = 8;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+      }
+      [lastX, lastY] = [event.offsetX, event.offsetY];
+    }
+
+    function startDrawing(event) {
+      isDrawing = true;
+      [lastX, lastY] = [event.offsetX, event.offsetY];
+    }
+
+    function stopDrawing() {
+      isDrawing = false;
+      ctx.beginPath();
+    }
+
+    function clearCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      textBoxes.forEach(textbox => textbox.remove());
+    }
+
+    function saveCanvas() {
+      const link = document.createElement('a');
+      link.download = 'void_art.png';
+      link.href = canvas.toDataURL();
+      link.click();
+    }
+
+    function toggleEraserMode() {
+      isErasing = !isErasing;
+      toggleEraser.textContent = isErasing ? "Eraser On" : "Eraser Off";
+      eraserCursor.style.visibility = isErasing ? "visible" : "hidden";
+    }
+
+    function adjustEraserSize(event) {
+      eraserSize += event.deltaY > 0 ? -5 : 5;
+      if (eraserSize < 5) eraserSize = 5;
+      if (eraserSize > 100) eraserSize = 100;
+      eraserCursor.style.width = `${eraserSize}px`;
+      eraserCursor.style.height = `${eraserSize}px`;
+    }
+
+    function playYouTube() {
+      const link = youtubeLink.value;
+      if (link) {
+        const videoId = link.split("v=")[1]?.split("&")[0];
+        if (videoId) {
+          videoPlayer.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}`;
+          videoPlayer.style.display = "none";  // Hide the video but play audio
+        }
+      }
+    }
+
+    function activateTextTool() {
+      isTextToolActive = !isTextToolActive;
+      addTextTool.textContent = isTextToolActive ? "Text Tool On" : "Add Text";
+    }
+
+    function addTextBox(event) {
+      if (!isTextToolActive) return;
+
+      const textBox = document.createElement('textarea');
+      textBox.style.position = "absolute";
+      textBox.style.left = `${event.clientX}px`;
+      textBox.style.top = `${event.clientY}px`;
+      textBox.style.background = "rgba(0, 0, 0, 0.8)";
+      textBox.style.color = "white";
+      textBox.style.border = "1px solid white";
+      textBox.style.fontSize = "16px";
+      textBox.style.padding = "5px";
+      textBox.style.resize = "none";
+      document.body.appendChild(textBox);
+      textBoxes.push(textBox);
+      textBox.focus();
+    }
+
+    function isCollision(x, y, element) {
+      const rect = element.getBoundingClientRect();
+      return x > rect.left && x < rect.right && y > rect.top && y < rect.bottom;
+    }
+
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', drawVoid);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+    canvas.addEventListener('wheel', adjustEraserSize);
+    canvas.addEventListener('click', addTextBox);
+    toggleEraser.addEventListener('click', toggleEraserMode);
+    addTextTool.addEventListener('click', activateTextTool);
+    window.addEventListener('resize', resizeCanvas);
+
+    startSequence();
+  </script>
+</body>
+</html>

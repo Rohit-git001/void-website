@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Void Picker Wheel</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: black;
+      color: white;
+      font-family: 'Courier New', Courier, monospace;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    .hidden { opacity: 0; display: none; }
+    .fade-in { animation: fadeIn 2s forwards; }
+    .fade-out { animation: fadeOut 2s forwards; }
+    #intro {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+    #container {
+      display: flex;
+      flex-direction: row;
+      width: 100%;
+      height: 100%;
+    }
+    #wheelContainer {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #wheel {
+      border-radius: 50%;
+      width: 70vh;
+      height: 70vh;
+      border: 10px solid white;
+      position: relative;
+      overflow: hidden;
+      background-color: black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.7);
+    }
+    .wheel-section {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 50%;
+      height: 50%;
+      transform-origin: 100% 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: 18px;
+      text-align: center;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    .wheel-section span {
+      transform: rotate(-90deg);
+    }
+    #menu {
+      flex: 0.4;
+      padding: 20px;
+      border-left: 1px solid white;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: flex-start;
+      height: 100vh;
+    }
+    #optionsList {
+      list-style-type: none;
+      padding: 0;
+      margin-top: 10px;
+      overflow-y: auto;
+      max-height: 70%;
+      width: 100%;
+    }
+    #optionsList li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px;
+      margin: 5px 0;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid white;
+      border-radius: 5px;
+    }
+    button, input[type="text"] {
+      background: none;
+      border: 1px solid white;
+      color: white;
+      padding: 10px;
+      margin: 5px 0;
+      font-size: 16px;
+      transition: background 0.3s, color 0.3s;
+    }
+    input[type="text"] {
+      width: 75%;
+    }
+    button {
+      width: 20%;
+    }
+    button:hover, input[type="text"]:focus {
+      background: white;
+      color: black;
+    }
+    .remove-button {
+      background: none;
+      border: none;
+      color: red;
+      font-size: 18px;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+    #actionButtons {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      width: 100%;
+      margin-top: auto;
+    }
+    #actionButtons button {
+      flex: 1;
+      padding: 10px;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div id="intro" class="hidden"></div>
+  <div id="container" class="hidden">
+    <div id="wheelContainer"></div>
+    <div id="menu">
+      <h3>Manage Options</h3>
+      <div style="display: flex; align-items: center; width: 100%;">
+        <input type="text" id="newOption" placeholder="Add a new option..." />
+        <button onclick="addOption()">Add</button>
+      </div>
+      <ul id="optionsList"></ul>
+      <div id="actionButtons">
+        <button onclick="spinWheel()">Spin the Wheel</button>
+        <button onclick="location.href='index.html'">Return to the Void</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const intro = document.getElementById('intro');
+    const container = document.getElementById('container');
+    const wheelContainer = document.getElementById('wheelContainer');
+    const optionsList = document.getElementById('optionsList');
+    let options = [];
+    let angle = 0;
+
+    const introText = [
+      "You have summoned the Wheel of the Void...",
+      "A wheel that chooses, a wheel that decides, a wheel that whispers the future.",
+      "Add your options, spin the wheel, and let the Void decide your fate."
+    ];
+
+    let currentTextIndex = 0;
+
+    function typeText(textArray, callback) {
+      if (currentTextIndex < textArray.length) {
+        const phrase = textArray[currentTextIndex];
+        let charIndex = 0;
+        const interval = setInterval(() => {
+          if (charIndex < phrase.length) {
+            intro.innerHTML += phrase[charIndex];
+            charIndex++;
+          } else {
+            clearInterval(interval);
+            currentTextIndex++;
+            intro.innerHTML += "<br>";
+            setTimeout(() => typeText(textArray, callback), 1000);
+          }
+        }, 50);
+      } else {
+        if (callback) callback();
+      }
+    }
+
+    function fadeIn(element) {
+      element.classList.remove('hidden');
+      element.classList.add('fade-in');
+    }
+
+    function fadeOut(element, callback) {
+      element.classList.add('fade-out');
+      element.addEventListener('animationend', () => {
+        element.classList.add('hidden');
+        element.classList.remove('fade-out');
+        if (callback) callback();
+      });
+    }
+
+    function startSequence() {
+      fadeIn(intro);
+      typeText(introText, () => {
+        fadeOut(intro, () => {
+          intro.remove();
+          fadeIn(container);
+          displayWheel();
+        });
+      });
+    }
+
+    function displayWheel() {
+      wheelContainer.innerHTML = '';
+      const wheel = document.createElement('div');
+      wheel.id = 'wheel';
+      wheelContainer.appendChild(wheel);
+
+      if (options.length > 0) {
+        const wheelSectionAngle = 360 / options.length;
+        options.forEach((option, index) => {
+          const wheelSection = document.createElement('div');
+          wheelSection.classList.add('wheel-section');
+          wheelSection.style.transform = `rotate(${wheelSectionAngle * index}deg)`;
+          wheelSection.innerHTML = `<span>${option}</span>`;
+          wheel.appendChild(wheelSection);
+        });
+      }
+    }
+
+    function spinWheel() {
+      if (options.length === 0) {
+        alert("The Void is empty. Add options first.");
+        return;
+      }
+
+      angle += Math.floor(Math.random() * 360 + 360);
+      const wheel = document.getElementById('wheel');
+      wheel.style.transition = "transform 3s ease-out";
+      wheel.style.transform = `rotate(${angle}deg)`;
+
+      setTimeout(() => {
+        const index = Math.floor(((angle % 360) / 360) * options.length);
+        alert(`The Void chooses: ${options[index]}`);
+      }, 3000);
+    }
+
+    function addOption() {
+      const newOption = document.getElementById('newOption').value.trim();
+      if (newOption) {
+        options.push(newOption);
+        document.getElementById('newOption').value = '';
+        updateOptionsList();
+        displayWheel();
+      }
+    }
+
+    function removeOption(index) {
+      options.splice(index, 1);
+      updateOptionsList();
+      displayWheel();
+    }
+
+    function updateOptionsList() {
+      optionsList.innerHTML = '';
+      options.forEach((option, index) => {
+        const listItem = document.createElement('li');
+        listItem.innerHTML = `
+          <span>${option}</span> 
+          <button class="remove-button" onclick="removeOption(${index})">❌</button>
+        `;
+        optionsList.appendChild(listItem);
+      });
+    }
+
+    startSequence();
+  </script>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Into the Void</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: black;
+      color: white;
+      font-family: 'Courier New', Courier, monospace;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .hidden { opacity: 0; }
+    .fade-in { animation: fadeIn 2s forwards; }
+    .fade-out { animation: fadeOut 2s forwards; }
+    .typing-space { text-align: center; }
+    .btn-container {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    button {
+      background: none;
+      border: 1px solid white;
+      color: white;
+      padding: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.3s, color 0.3s;
+    }
+    button:hover {
+      background: white;
+      color: black;
+    }
+    #main { text-align: center; line-height: 1.6; }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div id="main" class="hidden"></div>
+  <div class="btn-container hidden">
+    <button onclick="location.href='html1.html'">fate decider</button>
+    <button onclick="location.href='html2.html'">void wheel</button>
+    <button onclick="location.href='html3.html'">void painter</button>
+  </div>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
+  <script>
+    const main = document.getElementById('main');
+    const btnContainer = document.querySelector('.btn-container');
+    let userName = "";
+
+    const phrases = [
+      "this space welcomes all,",
+      "share what you want to share,",
+      "then leave it to the void,",
+      "never to be known again."
+    ];
+    
+    const instructions = [
+      "Type your name or choose to remain nameless.",
+      "When you're ready, pour your heart out.",
+      "Let the void take your words and free your soul."
+    ];
+
+    let currentTextIndex = 0;
+
+    // Typing animation with delays between sentences
+    function typeText(textArray, callback) {
+      if (currentTextIndex < textArray.length) {
+        const phrase = textArray[currentTextIndex];
+        let charIndex = 0;
+        const interval = setInterval(() => {
+          if (charIndex < phrase.length) {
+            main.innerHTML += phrase[charIndex];
+            charIndex++;
+          } else {
+            clearInterval(interval);
+            currentTextIndex++;
+            main.innerHTML += "<br>";
+            setTimeout(() => typeText(textArray, callback), 1000); // Pause between sentences
+          }
+        }, 50);
+      } else {
+        if (callback) callback();
+      }
+    }
+
+    // Fading
+    function fadeIn(element) {
+      element.classList.remove('hidden');
+      element.classList.add('fade-in');
+    }
+    
+    function fadeOut(element, callback) {
+      element.classList.add('fade-out');
+      element.addEventListener('animationend', () => {
+        element.classList.add('hidden');
+        element.classList.remove('fade-out');
+        if (callback) callback();
+      });
+    }
+
+    // Main sequence
+    function startSequence() {
+      fadeIn(main);
+      typeText(phrases, () => {
+        fadeOut(main, () => {
+          main.innerHTML = `
+            <div class="typing-space">
+              <input type="text" id="name" placeholder="Enter your name..." onkeydown="checkEnter(event)">
+              <br>
+              <button onclick="submitName()">Not wish to say name</button>
+            </div>`;
+          fadeIn(main);
+        });
+      });
+    }
+
+    // Submit name on Enter
+    function checkEnter(event) {
+      if (event.key === "Enter") {
+        userName = event.target.value.trim() || "stranger";
+        submitName();
+      }
+    }
+
+    // Submit name
+    function submitName() {
+      if (!userName) {
+        const input = document.getElementById('name');
+        userName = input ? input.value.trim() : "stranger";
+      }
+      fadeOut(main, () => {
+        main.innerHTML = `
+          <textarea placeholder="Share your thoughts with the void..." style="width: 80%; height: 200px;"></textarea>
+          <br>
+          <button onclick="leave()">Leave it to the void</button>`;
+        fadeIn(main);
+        fadeIn(btnContainer);
+      });
+    }
+
+    // Leave thoughts to the void
+    function leave() {
+      fadeOut(main, () => {
+        main.innerHTML = `<div>Thank you, ${userName}. The void has received your thoughts.</div>`;
+        fadeIn(main);
+      });
+    }
+
+    // Start
+    startSequence();
+  </script>
+</body>
+</html>
